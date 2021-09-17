@@ -1,7 +1,10 @@
 FROM ubuntu:20.04
+ENV TZ=America/La_Paz
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt-get update; \
-    apt-get install -y gcc libffi-devel python3; \
+    apt-get install -y python3; \
     apt-get install -y python3-pip wget openssh-server sudo; 
     
 RUN pip3 install --upgrade pip; \
