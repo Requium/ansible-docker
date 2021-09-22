@@ -10,7 +10,9 @@ RUN apt-get update; \
 RUN pip3 install --upgrade pip; \
     pip3 install "ansible"; \
     pip3 install "paramiko"; \
+    pip3 install "librouteros"; \
     ansible-galaxy collection install community.network
+    ansible-galaxy collection install community.routeros
     
 RUN useradd -rm -d /home/ubuntu -s /bin/bash -g root -G sudo -u 1000 ansible
 
