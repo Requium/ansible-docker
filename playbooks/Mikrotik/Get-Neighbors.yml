@@ -1,0 +1,44 @@
+#!/usr/local/bin/ansible-playbook
+---
+- name: Get Neighbors
+  connection: network_cli
+  gather_facts: false
+  hosts: check
+  tasks:
+    - name: Collect interface facts
+      community.routeros.facts:
+        gather_subset: "interfaces"
+
+    - name: Get Neigbors
+      set_fact:
+        neighbor: "{{ ansible_facts.net_neighbors }} "
+  
+    - name: Get Routers Neighbors without Duplicated Licenses
+      with_items: " {{ neighbor }} "
+      set_fact:
+        master_neighbors: "{{master_neighbors|default([])}} + {{[new_dict]}}"
+      vars:
+        new_dict:
+          inventory_hostname: " {{item.identity}} "
+          ansible_ssh_host: "{{item.address}}"  
+          softwarekey: "{{item['software-id']}}"   
+      loop_control:
+        index_var: my_idx
+      when: "(my_idx == 0  and item.address is defined and item.platform is defined  and ( 'CCR'  in item.board or 'RB' in item.board or 'CRS' in item.board)) or item.address is defined and item.platform is defined  and ( 'CCR'  in item.board or 'RB' in item.board or 'CRS' in item.board) and (my_idx > 1 and (master_neighbors | selectattr('softwarekey','equalto',item['software-id']) | list | count) == 0) "
+    
+    - name: Print Neigbours
+      debug:
+        var: " {{(master_neighbors)}} "
+      when: inventory_hostname in groups['check']
+
+    - name: Assertion of Duplicates
+      assert: 
+        that: >
+              master_neighbors  | map(attribute='softwarekey') | list | count
+              ==
+              master_neighbors  | map(attribute='softwarekey') | list | unique | count
+      when: inventory_hostname in groups['check']
+    
+
+
+
